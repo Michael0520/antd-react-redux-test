@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons'
 import { Button, QRCode } from 'antd'
 import React, { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -97,6 +97,12 @@ const ClassDetail: React.FC = () => {
           Join
           {currentClass.name}
         </Title>
+        <Button
+          icon={<UserOutlined />}
+          onClick={() => navigate('/science/student-list')}
+        >
+          View Student List
+        </Button>
       </Header>
 
       <ContentWrapper>
