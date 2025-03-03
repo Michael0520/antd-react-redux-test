@@ -1,6 +1,12 @@
 # ViewSonic interview f2e quiz
 This template is based on the template [vite-react-ts-starter](https://github.com/zhixiangyao/vite-react-ts-starter)
 
+## Router
+
+- [class-page](https://qr-code-class.vercel.app/class/index)
+- [class-id](https://qr-code-class.vercel.app/class/X58E9647)
+- [science-page](https://qr-code-class.vercel.app/science/student-list)
+
 ## Clone
 
 ```shell
