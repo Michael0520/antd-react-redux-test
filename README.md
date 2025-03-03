@@ -1,25 +1,11 @@
-# Vite + React + ReactRouter + ReactRedux + TypeScript + TailwindCSS + AntdUI
-
+# ViewSonic interview f2e quiz
 This template is based on the template [vite-react-ts-starter](https://github.com/zhixiangyao/vite-react-ts-starter)
-
-**Editor:**
-
-- [VS Code](https://code.visualstudio.com/)
-
-**VSCode Extension:**
-
-- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
-
-**Development ENV:**
-
-- NodeJs
-- Git
 
 ## Clone
 
 ```shell
-git clone git@github.com:zhixiangyao/vite-react-ts-antd-starter.git
-cd vite-react-ts-antd-starter
+git clone git@github.com:Michael0520/QRCode-class.git
+cd QRCode-class
 pnpm i # If not install pnpm, please run: npm install -g pnpm
 ```
 
