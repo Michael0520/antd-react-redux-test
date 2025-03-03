@@ -1,4 +1,4 @@
-import { HomeOutlined, RadarChartOutlined } from '@ant-design/icons'
+import { RadarChartOutlined } from '@ant-design/icons'
 import { Spin } from 'antd'
 import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
@@ -11,12 +11,6 @@ interface Route {
 }
 
 export const routes: Route[] = [
-  {
-    label: 'Registrant List',
-    path: '/registrant-list',
-    icon: <HomeOutlined />,
-    element: import('./pages/registrant-list').then(({ RegistrantListPage }) => RegistrantListPage),
-  },
   {
     label: 'Test',
     path: '/test',
