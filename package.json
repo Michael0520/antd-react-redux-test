@@ -10,12 +10,12 @@
     "url": "git+https://github.com/zhixiangyao/vite-react-ts-antd-starter.git"
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=20",
     "pnpm": ">=9"
   },
   "scripts": {
     "dev": "vite",
-    "scan": "vite & sleep 3 && npx react-scan@latest localhost:3000",
+    "scan": "vite & sleep 3 && npx react-scan@latest",
     "build": "tsc && vite build",
     "preview": "npm run build && vite preview",
     "preview:dist": "vite preview",
