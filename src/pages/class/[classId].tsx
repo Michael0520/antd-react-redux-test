@@ -1,8 +1,9 @@
 import { ArrowLeftOutlined } from '@ant-design/icons'
-import { Button, Card, QRCode, Space } from 'antd'
+import { Button, QRCode } from 'antd'
 import React, { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
+import CopyButton from '../../components/class/CopyButton'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { setCurrentClass } from '../../store/slices/classSlice'
 
@@ -10,23 +11,52 @@ const Container = styled.div`
   padding: 24px;
   max-width: 800px;
   margin: 0 auto;
+  background: white;
+  min-height: 100vh;
 `
 
 const Header = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
   gap: 16px;
+`
+
+const BackButton = styled(Button)`
+  padding: 0;
 `
 
 const Title = styled.h1`
   margin: 0;
+  font-size: 28px;
+  color: rgba(0, 0, 0, 0.88);
 `
 
 const ContentWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
+  margin-top: 24px;
+`
+
+const ClassInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.88);
+`
+
+const QRCodeWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+`
+
+const VersionText = styled.div`
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+  margin-top: 16px;
 `
 
 const ClassDetail: React.FC = () => {
@@ -50,53 +80,49 @@ const ClassDetail: React.FC = () => {
     navigate('/class/index')
   }
 
-  const handleViewStudents = () => {
-    navigate('/science/student-list')
-  }
-
   if (!currentClass)
     return null
+
+  const classLink = 'https://www.classswift.viewsonic.io/'
 
   return (
     <Container>
       <Header>
-        <Button
+        <BackButton
           icon={<ArrowLeftOutlined />}
           onClick={handleBack}
           type="text"
         />
-        <Title>{currentClass.name}</Title>
+        <Title>
+          Join
+          {currentClass.name}
+        </Title>
       </Header>
 
       <ContentWrapper>
-        <Card title="Class Information">
-          <p>
-            Class ID:
+        <ClassInfo>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            ID:
+            {' '}
             {currentClass.id}
-          </p>
-          <p>
-            Total Seats:
-            {currentClass.totalSeats}
-          </p>
-          <p>
-            Current Students:
-            {currentClass.currentStudents}
-          </p>
-          <Space direction="vertical" style={{ width: '100%', marginTop: '24px' }}>
-            <Button type="primary" block onClick={handleViewStudents}>
-              View Student List
-            </Button>
-          </Space>
-        </Card>
-
-        <Card title="QR Code">
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
-            <QRCode
-              value={`${window.location.origin}/class/${currentClass.id}`}
-              size={200}
-            />
+            <CopyButton text={currentClass.id} type="ID" />
           </div>
-        </Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Link:
+            {' '}
+            <CopyButton text={classLink} type="Link" />
+          </div>
+        </ClassInfo>
+
+        <QRCodeWrapper>
+          <QRCode
+            value={classLink}
+            size={280}
+            style={{ padding: '24px', background: 'white' }}
+          />
+        </QRCodeWrapper>
+
+        <VersionText>Version 1.1.7</VersionText>
       </ContentWrapper>
     </Container>
   )
