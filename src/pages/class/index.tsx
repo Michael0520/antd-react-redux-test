@@ -1,5 +1,5 @@
 import { QrcodeOutlined, TeamOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, List, Skeleton } from 'antd'
+import { Button, Card, Empty, List } from 'antd'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
@@ -117,42 +117,28 @@ const ClassList: React.FC = () => {
     navigate(`/student-list/${classId}`)
   }
 
-  if (loading) {
-    return (
-      <Container>
-        <Title>Class List</Title>
-        <List
-          grid={{ gutter: 24, column: 3 }}
-          dataSource={[1, 2, 3, 4, 5, 6]}
-          renderItem={() => (
-            <List.Item>
-              <Skeleton active />
-            </List.Item>
-          )}
-        />
-      </Container>
-    )
-  }
-
-  if (!classes.length) {
-    return (
-      <Container>
-        <Title>Class List</Title>
-        <Empty
-          description="No classes available"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          style={{ marginTop: 48 }}
-        />
-      </Container>
-    )
+  const gridConfig = {
+    gutter: 24,
+    xs: 1,
+    sm: 2,
   }
 
   return (
     <Container>
       <Title>Class List</Title>
       <List
-        grid={{ gutter: 24, column: 3 }}
+        grid={gridConfig}
         dataSource={classes}
+        loading={loading}
+        locale={{
+          emptyText: (
+            <Empty
+              description="No classes available"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              style={{ marginTop: 48 }}
+            />
+          ),
+        }}
         renderItem={item => (
           <List.Item>
             <StyledCard
