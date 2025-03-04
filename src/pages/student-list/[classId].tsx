@@ -1,12 +1,24 @@
 import type { Student } from '../../types'
 import { CloseOutlined, CrownOutlined, EllipsisOutlined } from '@ant-design/icons'
-import { Button, Modal, Tabs, Tooltip } from 'antd'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Button, Dropdown, Modal, Tabs, Tooltip } from 'antd'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { setCurrentClass } from '../../store/slices/classSlice'
-import { updateStudentScore } from '../../store/slices/scienceSlice'
+import { randomizeGroup, resetGroup, updateStudentScore } from '../../store/slices/scienceSlice'
+
+const TAB_TYPE = {
+  STUDENT_LIST: 'student-list',
+  GROUP: 'group',
+} as const
+
+type TabType = typeof TAB_TYPE[keyof typeof TAB_TYPE]
+
+const MENU_ACTION = {
+  RANDOM_GROUP: 'random-group',
+  RESET_GROUPS: 'reset-groups',
+} as const
 
 const ModalContent = styled.div`
   display: flex;
@@ -75,9 +87,9 @@ const SeatGrid = styled.div`
 `
 
 interface SeatCardProps {
-  isGuest?: boolean
-  isActive?: boolean
-  hasBlueHeader?: boolean
+  $isGuest?: boolean
+  $isActive?: boolean
+  $hasBlueHeader?: boolean
 }
 
 const SeatCard = styled.div<SeatCardProps>`
@@ -86,15 +98,15 @@ const SeatCard = styled.div<SeatCardProps>`
   border-radius: 4px;
   overflow: hidden;
   background: white;
-  border: 1px solid ${props => props.isGuest ? '#e8e8e8' : '#1890ff'};
-  box-shadow: ${props => !props.isGuest ? '0 0 0 1px rgba(24, 144, 255, 0.1)' : 'none'};
-  ${props => props.isGuest && `
+  border: 1px solid ${props => props.$isGuest ? '#e8e8e8' : '#1890ff'};
+  box-shadow: ${props => !props.$isGuest ? '0 0 0 1px rgba(24, 144, 255, 0.1)' : 'none'};
+  ${props => props.$isGuest && `
     background: #f5f5f5;
   `}
 `
 
-const SeatHeader = styled.div<{ isBlue?: boolean }>`
-  background: ${props => props.isBlue ? '#1890ff' : '#d9d9d9'};
+const SeatHeader = styled.div<{ $isBlue?: boolean }>`
+  background: ${props => props.$isBlue ? '#1890ff' : '#d9d9d9'};
   color: white;
   font-size: 0.875rem;
   padding: 4px 0;
@@ -108,7 +120,7 @@ const SeatContent = styled.div`
 `
 
 interface StudentNameProps {
-  isGuest?: boolean
+  $isGuest?: boolean
 }
 
 const StudentName = styled.div<StudentNameProps>`
@@ -116,7 +128,7 @@ const StudentName = styled.div<StudentNameProps>`
   font-weight: 500;
   text-align: center;
   margin-bottom: 8px;
-  color: ${props => props.isGuest ? '#bfbfbf' : '#262626'};
+  color: ${props => props.$isGuest ? '#bfbfbf' : '#262626'};
 `
 
 const ScoreControls = styled.div`
@@ -195,11 +207,11 @@ const GroupMembers = styled.div`
   }
 `
 
-const MemberCard = styled.div<{ isLeader?: boolean }>`
+const MemberCard = styled.div<{ $isLeader?: boolean }>`
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid ${props => props.isLeader ? '#faad14' : '#e8e8e8'};
-  background: ${props => props.isLeader ? '#fffbe6' : 'white'};
+  border: 1px solid ${props => props.$isLeader ? '#faad14' : '#e8e8e8'};
+  background: ${props => props.$isLeader ? '#fffbe6' : 'white'};
   display: flex;
   align-items: center;
   gap: 8px;
@@ -240,10 +252,10 @@ const StudentListTab: React.FC<StudentListTabProps> = ({
         const hasBlueHeader = !isGuest
 
         return (
-          <SeatCard key={seatNumber} isGuest={isGuest} hasBlueHeader={hasBlueHeader}>
-            <SeatHeader isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
+          <SeatCard key={seatNumber} $isGuest={isGuest} $hasBlueHeader={hasBlueHeader}>
+            <SeatHeader $isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
             <SeatContent>
-              <StudentName isGuest={isGuest}>
+              <StudentName $isGuest={isGuest}>
                 {student?.name || 'Guest'}
               </StudentName>
               <ScoreControls>
@@ -296,7 +308,7 @@ const GroupTab: React.FC<GroupTabProps> = ({ groups }) => {
               {group.map((student, studentIndex) => (
                 <MemberCard
                   key={student.id}
-                  isLeader={studentIndex === 0}
+                  $isLeader={studentIndex === 0}
                 >
                   {studentIndex === 0 && (
                     <Tooltip title="Team Leader">
@@ -325,7 +337,11 @@ const StudentList: React.FC = () => {
   const currentClass = useAppSelector(state => state.class.currentClass)
   const classList = useAppSelector(state => state.class.classList)
   const students = useAppSelector(state => state.science.students)
-  const [activeTab, setActiveTab] = useState('student-list')
+
+  const randomizedStudentsMap = useAppSelector(state => state.science.randomizedStudents)
+
+  const [activeTab, setActiveTab] = useState<TabType>(TAB_TYPE.STUDENT_LIST)
+  const [groupKey] = useState(0)
 
   // Filter seats based on current class
   const seats = useMemo<Array<Student | null>>(() => {
@@ -334,17 +350,26 @@ const StudentList: React.FC = () => {
     return students[currentClass.id] || Array.from<Student | null>({ length: 20 }).fill(null)
   }, [currentClass, students])
 
+  const randomizedStudents = useMemo(() => {
+    if (!currentClass)
+      return null
+    return randomizedStudentsMap[currentClass.id] || null
+  }, [currentClass, randomizedStudentsMap])
+
   // Create groups of 5 students
   const groups = useMemo(() => {
     const nonGuestStudents = seats.filter(student => student && !student.isGuest) as Student[]
+
+    const studentsToGroup = randomizedStudents || nonGuestStudents
+
     const groupSize = 5
     const result: Student[][] = []
 
-    for (let i = 0; i < nonGuestStudents.length; i += groupSize) {
-      result.push(nonGuestStudents.slice(i, i + groupSize))
+    for (let i = 0; i < studentsToGroup.length; i += groupSize) {
+      result.push(studentsToGroup.slice(i, i + groupSize))
     }
     return result
-  }, [seats])
+  }, [seats, randomizedStudents])
 
   useEffect(() => {
     if (classId) {
@@ -356,12 +381,12 @@ const StudentList: React.FC = () => {
     }
   }, [classId, classList, dispatch, navigate])
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     if (currentClass)
       navigate(`/class/${currentClass.id}`)
     else
       navigate('/class/index')
-  }, [currentClass, navigate])
+  }
 
   const handleIncreaseScore = (studentId: string) => {
     if (!currentClass)
@@ -381,19 +406,79 @@ const StudentList: React.FC = () => {
     }))
   }
 
-  const items = [
+  const handleMenuClick = ({ key }: { key: string }) => {
+    if (activeTab !== TAB_TYPE.GROUP) {
+      setActiveTab(TAB_TYPE.GROUP)
+    }
+
+    if (!currentClass) {
+      return
+    }
+
+    switch (key) {
+      case MENU_ACTION.RANDOM_GROUP: {
+        const nonGuestStudents = seats.filter(student => student && !student.isGuest) as Student[]
+        const shuffledStudents = [...nonGuestStudents].sort(() => Math.random() - 0.5)
+
+        dispatch(randomizeGroup({
+          classId: currentClass.id,
+          students: shuffledStudents,
+        }))
+
+        break
+      }
+      case MENU_ACTION.RESET_GROUPS:
+        dispatch(resetGroup({
+          classId: currentClass.id,
+        }))
+
+        break
+      default:
+        break
+    }
+  }
+
+  const tabItems = [
     {
-      key: 'student-list',
+      key: TAB_TYPE.STUDENT_LIST,
       label: 'Student List',
     },
     {
-      key: 'group',
+      key: TAB_TYPE.GROUP,
       label: 'Group',
+    },
+  ]
+
+  const menuItems = [
+    {
+      key: MENU_ACTION.RANDOM_GROUP,
+      label: 'Random Group',
+    },
+    {
+      key: MENU_ACTION.RESET_GROUPS,
+      label: 'Reset Groups',
     },
   ]
 
   if (!currentClass)
     return null
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case TAB_TYPE.STUDENT_LIST:
+        return (
+          <StudentListTab
+            seats={seats}
+            onIncreaseScore={handleIncreaseScore}
+            onDecreaseScore={handleDecreaseScore}
+          />
+        )
+      case TAB_TYPE.GROUP:
+        return <GroupTab key={groupKey} groups={groups} />
+      default:
+        return null
+    }
+  }
 
   return (
     <Modal
@@ -417,27 +502,27 @@ const StudentList: React.FC = () => {
             </span>
           </HeaderLeft>
           <HeaderRight>
-            <Button type="text" icon={<EllipsisOutlined />} />
+            <Dropdown
+              menu={{
+                items: menuItems,
+                onClick: handleMenuClick,
+              }}
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <Button type="text" icon={<EllipsisOutlined />} />
+            </Dropdown>
           </HeaderRight>
         </Header>
 
         <StyledTabs
           activeKey={activeTab}
-          onChange={setActiveTab}
-          items={items}
+          onChange={key => setActiveTab(key as TabType)}
+          items={tabItems}
         />
 
-        {activeTab === 'student-list'
-          ? (
-              <StudentListTab
-                seats={seats}
-                onIncreaseScore={handleIncreaseScore}
-                onDecreaseScore={handleDecreaseScore}
-              />
-            )
-          : (
-              <GroupTab groups={groups} />
-            )}
+        {/* Tab List */}
+        {renderTabContent()}
       </ModalContent>
     </Modal>
   )

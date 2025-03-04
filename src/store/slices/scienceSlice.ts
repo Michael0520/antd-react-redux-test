@@ -6,6 +6,7 @@ import { mockStudents } from '../../mock/data'
 interface ScienceState {
   students: Record<string, Student[]>
   seats: Array<Student | null>
+  randomizedStudents: Record<string, Student[] | null>
 }
 
 interface UpdateScorePayload {
@@ -13,9 +14,19 @@ interface UpdateScorePayload {
   change: number
 }
 
+interface RandomizeGroupPayload {
+  classId: string
+  students: Student[]
+}
+
+interface ResetGroupPayload {
+  classId: string
+}
+
 const initialState: ScienceState = {
   students: mockStudents,
   seats: [...Array.from({ length: 20 })].map(() => null) as Array<Student | null>,
+  randomizedStudents: {},
 }
 
 export const scienceSlice = createSlice({
@@ -44,9 +55,23 @@ export const scienceSlice = createSlice({
         }
       })
     },
+    randomizeGroup: (
+      state,
+      action: PayloadAction<RandomizeGroupPayload>,
+    ) => {
+      const { classId, students } = action.payload
+      state.randomizedStudents[classId] = students
+    },
+    resetGroup: (
+      state,
+      action: PayloadAction<ResetGroupPayload>,
+    ) => {
+      const { classId } = action.payload
+      state.randomizedStudents[classId] = null
+    },
   },
 })
 
-export const { updateStudentScore } = scienceSlice.actions
+export const { updateStudentScore, randomizeGroup, resetGroup } = scienceSlice.actions
 
 export default scienceSlice.reducer
