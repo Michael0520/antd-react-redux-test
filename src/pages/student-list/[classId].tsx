@@ -61,6 +61,16 @@ const SeatGrid = styled.div`
   gap: 8px;
   padding: 16px;
   background: #f5f5f5;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
 `
 
 interface SeatCardProps {
