@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons'
-import { Button, QRCode } from 'antd'
+import { ArrowLeftOutlined, CloseOutlined } from '@ant-design/icons'
+import { Button, Modal, QRCode } from 'antd'
 import React, { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -7,55 +7,80 @@ import CopyButton from '../../components/class/CopyButton'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { setCurrentClass } from '../../store/slices/classSlice'
 
-const Container = styled.div`
+const ModalContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  min-height: 100vh;
 `
 
 const Header = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-bottom: 8px;
 `
 
 const BackButton = styled(Button)`
-  padding: 0;
+  &&& {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    
+    &:hover {
+      color: #1890ff;
+    }
+  }
 `
 
-const Title = styled.h1`
+const Title = styled.h2`
   margin: 0;
-  font-size: 28px;
-  color: rgba(0, 0, 0, 0.88);
-`
-
-const ContentWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-top: 24px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1a1a1a;
 `
 
 const ClassInfo = styled.div`
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+`
+
+const InfoRow = styled.div`
+  display: flex;
   align-items: center;
-  gap: 24px;
-  font-size: 16px;
-  color: rgba(0, 0, 0, 0.88);
+  gap: 8px;
+  font-size: 0.875rem;
+
+  .label {
+    color: #666;
+    margin-right: 4px;
+  }
+
+  .value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 `
 
 const QRCodeWrapper = styled.div`
   display: flex;
   justify-content: center;
-  margin: 32px 0;
+  margin: 24px 0;
+
+  .ant-qrcode {
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
 `
 
 const VersionText = styled.div`
+  color: #999;
+  font-size: 0.75rem;
   text-align: center;
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
   margin-top: 16px;
 `
 
@@ -86,51 +111,57 @@ const ClassDetail: React.FC = () => {
   const classLink = 'https://www.classswift.viewsonic.io/'
 
   return (
-    <Container>
-      <Header>
-        <BackButton
-          icon={<ArrowLeftOutlined />}
-          onClick={handleBack}
-          type="text"
-        />
+    <Modal
+      open
+      onCancel={handleBack}
+      footer={null}
+      width={400}
+      centered
+      destroyOnClose
+      closeIcon={<CloseOutlined />}
+    >
+      <ModalContent>
+        <Header>
+          <BackButton
+            icon={<ArrowLeftOutlined />}
+            onClick={handleBack}
+            type="text"
+          >
+            Back to Class List
+          </BackButton>
+        </Header>
         <Title>
           Join
           {currentClass.name}
         </Title>
-        <Button
-          icon={<UserOutlined />}
-          onClick={() => navigate('/science/student-list')}
-        >
-          View Student List
-        </Button>
-      </Header>
 
-      <ContentWrapper>
         <ClassInfo>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            ID:
-            {' '}
-            {currentClass.id}
-            <CopyButton text={currentClass.id} type="ID" />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            Link:
-            {' '}
-            <CopyButton text={classLink} type="Link" />
-          </div>
+          <InfoRow>
+            <span className="label">ID:</span>
+            <span className="value">
+              {currentClass.id}
+              <CopyButton text={currentClass.id} type="ID" />
+            </span>
+          </InfoRow>
+          <InfoRow>
+            <span className="label">Link:</span>
+            <span className="value">
+              <CopyButton text={classLink} type="Link" />
+            </span>
+          </InfoRow>
         </ClassInfo>
 
         <QRCodeWrapper>
           <QRCode
             value={classLink}
-            size={280}
-            style={{ padding: '24px', background: 'white' }}
+            size={240}
+            bordered={false}
           />
         </QRCodeWrapper>
 
         <VersionText>Version 1.1.7</VersionText>
-      </ContentWrapper>
-    </Container>
+      </ModalContent>
+    </Modal>
   )
 }
 

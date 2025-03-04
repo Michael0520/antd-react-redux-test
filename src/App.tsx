@@ -3,7 +3,7 @@ import { Provider } from 'react-redux'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ClassList from './pages/class'
 import ClassDetail from './pages/class/[classId]'
-import StudentList from './pages/science/student-list'
+import StudentList from './pages/student-list/[classId]'
 import { store } from './store'
 
 const App: React.FC = () => (
@@ -15,9 +15,7 @@ const App: React.FC = () => (
           <Route path="index" element={<ClassList />} />
           <Route path=":classId" element={<ClassDetail />} />
         </Route>
-        <Route path="/science">
-          <Route path="student-list" element={<StudentList />} />
-        </Route>
+        <Route path="/student-list/:classId" element={<StudentList />} />
       </Routes>
     </BrowserRouter>
   </Provider>
