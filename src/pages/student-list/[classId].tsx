@@ -1,7 +1,7 @@
 import type { Student } from '../../types'
-import { CloseOutlined, EllipsisOutlined } from '@ant-design/icons'
-import { Button, Modal, Tabs } from 'antd'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { CloseOutlined, CrownOutlined, EllipsisOutlined } from '@ant-design/icons'
+import { Button, Modal, Tabs, Tooltip } from 'antd'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -55,6 +55,7 @@ const StyledTabs = styled(Tabs)`
   }
 `
 
+// Student List Tab Components
 const SeatGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -151,6 +152,172 @@ const ScoreValue = styled.div`
   text-align: center;
 `
 
+const GroupContainer = styled.div`
+  padding: 16px;
+  background: #f5f5f5;
+`
+
+const GroupList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`
+
+const GroupCard = styled.div`
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  overflow: hidden;
+`
+
+const GroupHeader = styled.div`
+  background: #1890ff;
+  color: white;
+  padding: 8px 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`
+
+const GroupMembers = styled.div`
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`
+
+const MemberCard = styled.div<{ isLeader?: boolean }>`
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid ${props => props.isLeader ? '#faad14' : '#e8e8e8'};
+  background: ${props => props.isLeader ? '#fffbe6' : 'white'};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`
+
+const MemberName = styled.div`
+  font-weight: 500;
+`
+
+const MemberScore = styled.div`
+  color: #ff4d4f;
+  font-size: 0.75rem;
+  margin-left: auto;
+`
+
+const LeaderIcon = styled(CrownOutlined)`
+  color: #faad14;
+  font-size: 16px;
+`
+
+interface StudentListTabProps {
+  seats: Array<Student | null>
+  onIncreaseScore: (studentId: string) => void
+  onDecreaseScore: (studentId: string) => void
+}
+
+const StudentListTab: React.FC<StudentListTabProps> = ({
+  seats,
+  onIncreaseScore,
+  onDecreaseScore,
+}) => {
+  return (
+    <SeatGrid>
+      {Array.from({ length: 20 }, (_, index) => {
+        const seatNumber = String(index + 1).padStart(2, '0')
+        const student = seats[index]
+        const isGuest = !student || student.isGuest
+        const hasBlueHeader = !isGuest
+
+        return (
+          <SeatCard key={seatNumber} isGuest={isGuest} hasBlueHeader={hasBlueHeader}>
+            <SeatHeader isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
+            <SeatContent>
+              <StudentName isGuest={isGuest}>
+                {student?.name || 'Guest'}
+              </StudentName>
+              <ScoreControls>
+                <ScoreButton
+                  type="minus"
+                  onClick={() => student && onDecreaseScore(student.id)}
+                  disabled={!student || student.score <= 0}
+                >
+                  -
+                </ScoreButton>
+                <ScoreValue>{student?.score || 0}</ScoreValue>
+                <ScoreButton
+                  type="plus"
+                  onClick={() => student && onIncreaseScore(student.id)}
+                  disabled={!student}
+                >
+                  +
+                </ScoreButton>
+              </ScoreControls>
+            </SeatContent>
+          </SeatCard>
+        )
+      })}
+    </SeatGrid>
+  )
+}
+
+interface GroupTabProps {
+  groups: Student[][]
+}
+
+const GroupTab: React.FC<GroupTabProps> = ({ groups }) => {
+  return (
+    <GroupContainer>
+      <GroupList>
+        {groups.map((group, groupIndex) => (
+          <GroupCard key={groupIndex}>
+            <GroupHeader>
+              <span>
+                Group
+                {groupIndex + 1}
+              </span>
+              <span>
+                {group.length}
+                {' '}
+                members
+              </span>
+            </GroupHeader>
+            <GroupMembers>
+              {group.map((student, studentIndex) => (
+                <MemberCard
+                  key={student.id}
+                  isLeader={studentIndex === 0}
+                >
+                  {studentIndex === 0 && (
+                    <Tooltip title="Team Leader">
+                      <LeaderIcon />
+                    </Tooltip>
+                  )}
+                  <MemberName>{student.name}</MemberName>
+                  <MemberScore>
+                    {student.score}
+                    +
+                  </MemberScore>
+                </MemberCard>
+              ))}
+            </GroupMembers>
+          </GroupCard>
+        ))}
+      </GroupList>
+    </GroupContainer>
+  )
+}
+
 const StudentList: React.FC = () => {
   const { classId } = useParams()
   const navigate = useNavigate()
@@ -158,6 +325,7 @@ const StudentList: React.FC = () => {
   const currentClass = useAppSelector(state => state.class.currentClass)
   const classList = useAppSelector(state => state.class.classList)
   const students = useAppSelector(state => state.science.students)
+  const [activeTab, setActiveTab] = useState('student-list')
 
   // Filter seats based on current class
   const seats = useMemo<Array<Student | null>>(() => {
@@ -165,6 +333,18 @@ const StudentList: React.FC = () => {
       return Array.from<Student | null>({ length: 20 }).fill(null)
     return students[currentClass.id] || Array.from<Student | null>({ length: 20 }).fill(null)
   }, [currentClass, students])
+
+  // Create groups of 5 students
+  const groups = useMemo(() => {
+    const nonGuestStudents = seats.filter(student => student && !student.isGuest) as Student[]
+    const groupSize = 5
+    const result: Student[][] = []
+
+    for (let i = 0; i < nonGuestStudents.length; i += groupSize) {
+      result.push(nonGuestStudents.slice(i, i + groupSize))
+    }
+    return result
+  }, [seats])
 
   useEffect(() => {
     if (classId) {
@@ -209,7 +389,6 @@ const StudentList: React.FC = () => {
     {
       key: 'group',
       label: 'Group',
-      disabled: true,
     },
   ]
 
@@ -242,44 +421,23 @@ const StudentList: React.FC = () => {
           </HeaderRight>
         </Header>
 
-        <StyledTabs defaultActiveKey="student-list" items={items} />
+        <StyledTabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={items}
+        />
 
-        <SeatGrid>
-          {Array.from({ length: 20 }, (_, index) => {
-            const seatNumber = String(index + 1).padStart(2, '0')
-            const student = seats[index]
-            const isGuest = !student || student.isGuest
-            const hasBlueHeader = !isGuest
-
-            return (
-              <SeatCard key={seatNumber} isGuest={isGuest} hasBlueHeader={hasBlueHeader}>
-                <SeatHeader isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
-                <SeatContent>
-                  <StudentName isGuest={isGuest}>
-                    {student?.name || 'Guest'}
-                  </StudentName>
-                  <ScoreControls>
-                    <ScoreButton
-                      type="minus"
-                      onClick={() => student && handleDecreaseScore(student.id)}
-                      disabled={!student || student.score <= 0}
-                    >
-                      -
-                    </ScoreButton>
-                    <ScoreValue>{student?.score || 0}</ScoreValue>
-                    <ScoreButton
-                      type="plus"
-                      onClick={() => student && handleIncreaseScore(student.id)}
-                      disabled={!student}
-                    >
-                      +
-                    </ScoreButton>
-                  </ScoreControls>
-                </SeatContent>
-              </SeatCard>
+        {activeTab === 'student-list'
+          ? (
+              <StudentListTab
+                seats={seats}
+                onIncreaseScore={handleIncreaseScore}
+                onDecreaseScore={handleDecreaseScore}
+              />
             )
-          })}
-        </SeatGrid>
+          : (
+              <GroupTab groups={groups} />
+            )}
       </ModalContent>
     </Modal>
   )
