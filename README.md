@@ -1,39 +1,83 @@
-# ViewSonic interview f2e quiz
-This template is based on the template [vite-react-ts-starter](https://github.com/zhixiangyao/vite-react-ts-starter)
+# ViewSonic Interview F2E Quiz
 
-## Router
+This project demonstrates a modern React application with advanced state management and UI features. Built with Vite, React, TypeScript, and Ant Design.
 
-- [class-page](https://qr-code-class.vercel.app/class/index)
-- [class-id](https://qr-code-class.vercel.app/class/X58E9647)
-- [science-page](https://qr-code-class.vercel.app/science/student-list)
+## 🌟 Features & Improvements
 
-## Clone
+### Core Features
+- **Advanced State Management**
+  - Redux Toolkit for centralized state management
+  - Optimized performance with memoized selectors
+  - Persistent data across components and page refreshes
 
-```shell
-git clone git@github.com:Michael0520/QRCode-class.git
-cd QRCode-class
-pnpm i # If not install pnpm, please run: npm install -g pnpm
+- **Modern UI/UX**
+  - Responsive design with styled-components
+  - Ant Design components for consistent UI
+  - Smooth loading states and transitions
+  - Mobile-friendly interface
+
+- **Enhanced Student Management**
+  - Real-time score updates with Redux integration
+  - Dynamic student grouping system
+  - Intelligent seat assignment
+  - Group leader designation with special UI indicators
+
+### Additional Features
+
+- **QR Code Integration**
+  - Scannable QR code linking to https://www.classswift.viewsonic.io/
+  - One-click copy functionality
+
+- **Enhanced Group Management**
+  - Random group generation
+  - Group reset functionality
+  - Automatic team leader assignment
+  - Visual distinction for team leaders
+
+- **Improved Navigation**
+  - Seamless tab switching
+  - Modal-based navigation
+  - State persistence across page reloads
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+```bash
+npm install -g pnpm
 ```
 
-## Usage
+### Installation
+
+```bash
+git clone git@github.com:Michael0520/QRCode-class.git
+cd QRCode-class
+pnpm i
+```
 
 ### Development
 
-click it http://localhost:3000
-
-```shell
+```bash
 pnpm dev
 ```
 
+Visit http://localhost:5173
+
 ### Build
 
-```shell
+```bash
 pnpm build
 ```
 
-### Check
+### Code Quality
 
-```shell
+```bash
 pnpm lint
 pnpm lint:stylelint
 ```
+
+## Router Links
+
+- [Class Page](https://qr-code-class.vercel.app/class/index)
+- [Class Detail](https://qr-code-class.vercel.app/class/X58E9647)
+- [Science Page](https://qr-code-class.vercel.app/science/student-list)
