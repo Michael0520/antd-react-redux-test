@@ -1,7 +1,9 @@
+import type { RootState } from '../../store'
 import type { Student } from '../../types'
 import { CloseOutlined, CrownOutlined, EllipsisOutlined } from '@ant-design/icons'
+import { createSelector } from '@reduxjs/toolkit'
 import { Button, Dropdown, Modal, Tabs, Tooltip } from 'antd'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -232,181 +234,273 @@ const LeaderIcon = styled(CrownOutlined)`
   font-size: 16px;
 `
 
+interface SeatProps {
+  student: Student | null
+  seatNumber: number
+  onIncreaseScore: (studentId: string) => void
+  onDecreaseScore: (studentId: string) => void
+}
+
+const Seat = memo(({
+  student,
+  seatNumber,
+  onIncreaseScore,
+  onDecreaseScore,
+}: SeatProps) => {
+  const isGuest = !student || student.isGuest
+  const hasBlueHeader = !isGuest
+
+  return (
+    <SeatCard $isGuest={isGuest} $hasBlueHeader={hasBlueHeader}>
+      <SeatHeader $isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
+      <SeatContent>
+        <StudentName $isGuest={isGuest}>
+          {student?.name || 'Guest'}
+        </StudentName>
+        <ScoreControls>
+          <ScoreButton
+            type="minus"
+            onClick={() => student && onDecreaseScore(student.id)}
+            disabled={!student || student.score <= 0}
+          >
+            -
+          </ScoreButton>
+          <ScoreValue>{student?.score || 0}</ScoreValue>
+          <ScoreButton
+            type="plus"
+            onClick={() => student && onIncreaseScore(student.id)}
+            disabled={!student}
+          >
+            +
+          </ScoreButton>
+        </ScoreControls>
+      </SeatContent>
+    </SeatCard>
+  )
+})
+
+Seat.displayName = 'Seat'
+
+interface MemberProps {
+  student: Student
+  isLeader: boolean
+}
+
+const Member = memo(({ student, isLeader }: MemberProps) => {
+  return (
+    <MemberCard $isLeader={isLeader}>
+      {isLeader && (
+        <Tooltip title="Team Leader">
+          <LeaderIcon />
+        </Tooltip>
+      )}
+      <MemberName>{student.name}</MemberName>
+      <MemberScore>
+        {student.score}
+        +
+      </MemberScore>
+    </MemberCard>
+  )
+})
+
+Member.displayName = 'Member'
+
 interface StudentListTabProps {
   seats: Array<Student | null>
   onIncreaseScore: (studentId: string) => void
   onDecreaseScore: (studentId: string) => void
 }
 
-const StudentListTab: React.FC<StudentListTabProps> = ({
+const StudentListTab: React.FC<StudentListTabProps> = memo(({
   seats,
   onIncreaseScore,
   onDecreaseScore,
 }) => {
   return (
     <SeatGrid>
-      {Array.from({ length: 20 }, (_, index) => {
-        const seatNumber = String(index + 1).padStart(2, '0')
-        const student = seats[index]
-        const isGuest = !student || student.isGuest
-        const hasBlueHeader = !isGuest
-
+      {seats.map((student, index) => {
+        const seatNumber = index + 1
         return (
-          <SeatCard key={seatNumber} $isGuest={isGuest} $hasBlueHeader={hasBlueHeader}>
-            <SeatHeader $isBlue={hasBlueHeader}>{seatNumber}</SeatHeader>
-            <SeatContent>
-              <StudentName $isGuest={isGuest}>
-                {student?.name || 'Guest'}
-              </StudentName>
-              <ScoreControls>
-                <ScoreButton
-                  type="minus"
-                  onClick={() => student && onDecreaseScore(student.id)}
-                  disabled={!student || student.score <= 0}
-                >
-                  -
-                </ScoreButton>
-                <ScoreValue>{student?.score || 0}</ScoreValue>
-                <ScoreButton
-                  type="plus"
-                  onClick={() => student && onIncreaseScore(student.id)}
-                  disabled={!student}
-                >
-                  +
-                </ScoreButton>
-              </ScoreControls>
-            </SeatContent>
-          </SeatCard>
+          <Seat
+            key={seatNumber}
+            student={student}
+            seatNumber={seatNumber}
+            onIncreaseScore={onIncreaseScore}
+            onDecreaseScore={onDecreaseScore}
+          />
         )
       })}
     </SeatGrid>
   )
+})
+
+StudentListTab.displayName = 'StudentListTab'
+
+interface GroupProps {
+  group: Student[]
+  groupIndex: number
 }
+
+const Group = memo(({ group, groupIndex }: GroupProps) => {
+  return (
+    <GroupCard>
+      <GroupHeader>
+        <span>
+          Group
+          {groupIndex + 1}
+        </span>
+        <span>
+          {group.length}
+          {' '}
+          members
+        </span>
+      </GroupHeader>
+      <GroupMembers>
+        {group.map((student, studentIndex) => (
+          <Member
+            key={student.id}
+            student={student}
+            isLeader={studentIndex === 0}
+          />
+        ))}
+      </GroupMembers>
+    </GroupCard>
+  )
+})
+
+Group.displayName = 'Group'
 
 interface GroupTabProps {
   groups: Student[][]
 }
 
-const GroupTab: React.FC<GroupTabProps> = ({ groups }) => {
+const GroupTab: React.FC<GroupTabProps> = memo(({ groups }) => {
   return (
     <GroupContainer>
       <GroupList>
         {groups.map((group, groupIndex) => (
-          <GroupCard key={groupIndex}>
-            <GroupHeader>
-              <span>
-                Group
-                {groupIndex + 1}
-              </span>
-              <span>
-                {group.length}
-                {' '}
-                members
-              </span>
-            </GroupHeader>
-            <GroupMembers>
-              {group.map((student, studentIndex) => (
-                <MemberCard
-                  key={student.id}
-                  $isLeader={studentIndex === 0}
-                >
-                  {studentIndex === 0 && (
-                    <Tooltip title="Team Leader">
-                      <LeaderIcon />
-                    </Tooltip>
-                  )}
-                  <MemberName>{student.name}</MemberName>
-                  <MemberScore>
-                    {student.score}
-                    +
-                  </MemberScore>
-                </MemberCard>
-              ))}
-            </GroupMembers>
-          </GroupCard>
+          <Group
+            key={groupIndex}
+            group={group}
+            groupIndex={groupIndex}
+          />
         ))}
       </GroupList>
     </GroupContainer>
   )
-}
+})
+
+GroupTab.displayName = 'GroupTab'
 
 const StudentList: React.FC = () => {
   const { classId } = useParams()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const currentClass = useAppSelector(state => state.class.currentClass)
-  const classList = useAppSelector(state => state.class.classList)
-  const students = useAppSelector(state => state.science.students)
 
-  const randomizedStudentsMap = useAppSelector(state => state.science.randomizedStudents)
+  const selectCurrentClass = useMemo(() =>
+    createSelector(
+      (state: RootState) => state.class.currentClass,
+      currentClass => currentClass,
+    ), [])
+
+  const selectCurrentClassStudents = useMemo(() =>
+    createSelector(
+      (state: RootState) => state.class.currentClass,
+      (state: RootState) => state.science.students,
+      (currentClass, students) => currentClass ? students[currentClass.id] || [] : [],
+    ), [])
+
+  const selectRandomizedGroups = useMemo(() =>
+    createSelector(
+      (state: RootState) => state.class.currentClass,
+      (state: RootState) => state.science.randomizedGroups,
+      (currentClass, randomizedGroups) => currentClass ? randomizedGroups[currentClass.id] || [] : [],
+    ), [])
+
+  const currentClass = useAppSelector(selectCurrentClass)
+  const classList = useAppSelector(state => state.class.classList)
+  const currentClassStudents = useAppSelector(selectCurrentClassStudents)
+  const currentClassGroups = useAppSelector(selectRandomizedGroups)
 
   const [activeTab, setActiveTab] = useState<TabType>(TAB_TYPE.STUDENT_LIST)
-  const [groupKey] = useState(0)
 
-  // Filter seats based on current class
   const seats = useMemo<Array<Student | null>>(() => {
-    if (!currentClass)
+    if (!currentClassStudents.length) {
       return Array.from<Student | null>({ length: 20 }).fill(null)
-    return students[currentClass.id] || Array.from<Student | null>({ length: 20 }).fill(null)
-  }, [currentClass, students])
-
-  const randomizedStudents = useMemo(() => {
-    if (!currentClass)
-      return null
-    return randomizedStudentsMap[currentClass.id] || null
-  }, [currentClass, randomizedStudentsMap])
-
-  // Create groups of 5 students
-  const groups = useMemo(() => {
-    const nonGuestStudents = seats.filter(student => student && !student.isGuest) as Student[]
-
-    const studentsToGroup = randomizedStudents || nonGuestStudents
-
-    const groupSize = 5
-    const result: Student[][] = []
-
-    for (let i = 0; i < studentsToGroup.length; i += groupSize) {
-      result.push(studentsToGroup.slice(i, i + groupSize))
     }
-    return result
-  }, [seats, randomizedStudents])
+
+    const seatArray = Array.from<Student | null>({ length: 20 }).fill(null)
+
+    currentClassStudents.forEach((student: Student) => {
+      if (student.seatNumber > 0 && student.seatNumber <= 20) {
+        seatArray[student.seatNumber - 1] = student
+      }
+    })
+
+    return seatArray
+  }, [currentClassStudents])
+
+  const groups = useMemo(() => {
+    if (!currentClassStudents.length || !currentClassGroups.length) {
+      const nonGuestStudents = currentClassStudents.filter((student: Student) => !student.isGuest)
+      const groupSize = 5
+      const result: Student[][] = []
+
+      for (let i = 0; i < nonGuestStudents.length; i += groupSize) {
+        result.push(nonGuestStudents.slice(i, i + groupSize))
+      }
+
+      return result
+    }
+
+    return currentClassGroups.map((group: string[]) => {
+      return group.map((studentId: string) => {
+        return currentClassStudents.find((student: Student) => student.id === studentId) || {
+          id: studentId,
+          name: 'Unknown',
+          seatNumber: 0,
+          score: 0,
+          isGuest: false,
+        }
+      })
+    })
+  }, [currentClassStudents, currentClassGroups])
 
   useEffect(() => {
     if (classId) {
-      const foundClass = classList.find(c => c.id === classId)
-      if (foundClass)
-        dispatch(setCurrentClass(foundClass))
-      else
+      const targetClass = classList.find(c => c.id === classId)
+      if (targetClass) {
+        dispatch(setCurrentClass(targetClass))
+      }
+      else {
         navigate('/class/index')
+      }
     }
   }, [classId, classList, dispatch, navigate])
 
-  const handleBack = () => {
-    if (currentClass)
-      navigate(`/class/${currentClass.id}`)
-    else
-      navigate('/class/index')
-  }
+  const handleBack = useCallback(() => {
+    navigate('/class/index')
+  }, [navigate])
 
-  const handleIncreaseScore = (studentId: string) => {
+  const handleIncreaseScore = useCallback((studentId: string) => {
     if (!currentClass)
       return
     dispatch(updateStudentScore({
       studentId,
       change: 1,
     }))
-  }
+  }, [currentClass, dispatch])
 
-  const handleDecreaseScore = (studentId: string) => {
+  const handleDecreaseScore = useCallback((studentId: string) => {
     if (!currentClass)
       return
     dispatch(updateStudentScore({
       studentId,
       change: -1,
     }))
-  }
+  }, [currentClass, dispatch])
 
-  const handleMenuClick = ({ key }: { key: string }) => {
+  const handleMenuClick = useCallback(({ key }: { key: string }) => {
     if (activeTab !== TAB_TYPE.GROUP) {
       setActiveTab(TAB_TYPE.GROUP)
     }
@@ -417,12 +511,14 @@ const StudentList: React.FC = () => {
 
     switch (key) {
       case MENU_ACTION.RANDOM_GROUP: {
-        const nonGuestStudents = seats.filter(student => student && !student.isGuest) as Student[]
-        const shuffledStudents = [...nonGuestStudents].sort(() => Math.random() - 0.5)
+        const nonGuestStudents = currentClassStudents.filter((student: Student) => !student.isGuest)
+        const shuffledStudentIds = [...nonGuestStudents]
+          .sort(() => Math.random() - 0.5)
+          .map(student => student.id)
 
         dispatch(randomizeGroup({
           classId: currentClass.id,
-          students: shuffledStudents,
+          studentIds: shuffledStudentIds,
         }))
 
         break
@@ -436,7 +532,7 @@ const StudentList: React.FC = () => {
       default:
         break
     }
-  }
+  }, [activeTab, currentClass, currentClassStudents, dispatch, setActiveTab])
 
   const tabItems = [
     {
@@ -474,7 +570,7 @@ const StudentList: React.FC = () => {
           />
         )
       case TAB_TYPE.GROUP:
-        return <GroupTab key={groupKey} groups={groups} />
+        return <GroupTab key={`group-${JSON.stringify(groups)}`} groups={groups} />
       default:
         return null
     }

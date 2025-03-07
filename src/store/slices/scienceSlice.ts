@@ -5,8 +5,7 @@ import { mockStudents } from '../../mock/data'
 
 interface ScienceState {
   students: Record<string, Student[]>
-  seats: Array<Student | null>
-  randomizedStudents: Record<string, Student[] | null>
+  randomizedGroups: Record<string, string[][]>
 }
 
 interface UpdateScorePayload {
@@ -16,7 +15,7 @@ interface UpdateScorePayload {
 
 interface RandomizeGroupPayload {
   classId: string
-  students: Student[]
+  studentIds: string[]
 }
 
 interface ResetGroupPayload {
@@ -25,8 +24,7 @@ interface ResetGroupPayload {
 
 const initialState: ScienceState = {
   students: mockStudents,
-  seats: [...Array.from({ length: 20 })].map(() => null) as Array<Student | null>,
-  randomizedStudents: {},
+  randomizedGroups: {},
 }
 
 export const scienceSlice = createSlice({
@@ -46,12 +44,6 @@ export const scienceSlice = createSlice({
           const student = students[studentIndex]
           const newScore = Math.max(0, student.score + change)
           students[studentIndex] = { ...student, score: newScore }
-
-          // Update seat data as well
-          const seatIndex = student.seatNumber - 1
-          if (state.seats[seatIndex]) {
-            state.seats[seatIndex]!.score = newScore
-          }
         }
       })
     },
@@ -59,15 +51,25 @@ export const scienceSlice = createSlice({
       state,
       action: PayloadAction<RandomizeGroupPayload>,
     ) => {
-      const { classId, students } = action.payload
-      state.randomizedStudents[classId] = students
+      const { classId, studentIds } = action.payload
+
+      const groupSize = 5
+      const groups: string[][] = []
+
+      for (let i = 0; i < studentIds.length; i += groupSize) {
+        groups.push(studentIds.slice(i, i + groupSize))
+      }
+
+      state.randomizedGroups[classId] = groups
     },
     resetGroup: (
       state,
       action: PayloadAction<ResetGroupPayload>,
     ) => {
       const { classId } = action.payload
-      state.randomizedStudents[classId] = null
+
+      // Reset all classes' randomized groups
+      delete state.randomizedGroups[classId]
     },
   },
 })
