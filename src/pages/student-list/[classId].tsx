@@ -1,7 +1,5 @@
-import type { RootState } from '../../store'
 import type { Student } from '../../types'
 import { CloseOutlined, CrownOutlined, EllipsisOutlined } from '@ant-design/icons'
-import { createSelector } from '@reduxjs/toolkit'
 import { Button, Dropdown, Modal, Tabs, Tooltip } from 'antd'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -397,32 +395,36 @@ const StudentList: React.FC = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
-  const selectCurrentClass = useMemo(() =>
-    createSelector(
-      (state: RootState) => state.class.currentClass,
-      currentClass => currentClass,
-    ), [])
-
-  const selectCurrentClassStudents = useMemo(() =>
-    createSelector(
-      (state: RootState) => state.class.currentClass,
-      (state: RootState) => state.science.students,
-      (currentClass, students) => currentClass ? students[currentClass.id] || [] : [],
-    ), [])
-
-  const selectRandomizedGroups = useMemo(() =>
-    createSelector(
-      (state: RootState) => state.class.currentClass,
-      (state: RootState) => state.science.randomizedGroups,
-      (currentClass, randomizedGroups) => currentClass ? randomizedGroups[currentClass.id] || [] : [],
-    ), [])
-
-  const currentClass = useAppSelector(selectCurrentClass)
+  const currentClass = useAppSelector(state => state.class.currentClass)
   const classList = useAppSelector(state => state.class.classList)
-  const currentClassStudents = useAppSelector(selectCurrentClassStudents)
-  const currentClassGroups = useAppSelector(selectRandomizedGroups)
+  const students = useAppSelector(state => state.science.students)
+  const randomizedGroups = useAppSelector(state => state.science.randomizedGroups)
 
   const [activeTab, setActiveTab] = useState<TabType>(TAB_TYPE.STUDENT_LIST)
+
+  useEffect(() => {
+    if (classId) {
+      const targetClass = classList.find(c => c.id === classId)
+      if (targetClass) {
+        dispatch(setCurrentClass(targetClass))
+      }
+      else {
+        navigate('/class/index')
+      }
+    }
+  }, [classId, classList, dispatch, navigate])
+
+  const currentClassStudents = useMemo(() => {
+    if (!currentClass)
+      return []
+    return students[currentClass.id] || []
+  }, [currentClass, students])
+
+  const currentClassGroups = useMemo(() => {
+    if (!currentClass)
+      return []
+    return randomizedGroups[currentClass.id] || []
+  }, [currentClass, randomizedGroups])
 
   const seats = useMemo<Array<Student | null>>(() => {
     if (!currentClassStudents.length) {
@@ -465,18 +467,6 @@ const StudentList: React.FC = () => {
       })
     })
   }, [currentClassStudents, currentClassGroups])
-
-  useEffect(() => {
-    if (classId) {
-      const targetClass = classList.find(c => c.id === classId)
-      if (targetClass) {
-        dispatch(setCurrentClass(targetClass))
-      }
-      else {
-        navigate('/class/index')
-      }
-    }
-  }, [classId, classList, dispatch, navigate])
 
   const handleBack = useCallback(() => {
     navigate('/class/index')
@@ -534,6 +524,27 @@ const StudentList: React.FC = () => {
     }
   }, [activeTab, currentClass, currentClassStudents, dispatch, setActiveTab])
 
+  if (!currentClass) {
+    return null
+  }
+
+  const renderTabContent = (): React.ReactNode => {
+    switch (activeTab) {
+      case TAB_TYPE.STUDENT_LIST:
+        return (
+          <StudentListTab
+            seats={seats}
+            onIncreaseScore={handleIncreaseScore}
+            onDecreaseScore={handleDecreaseScore}
+          />
+        )
+      case TAB_TYPE.GROUP:
+        return <GroupTab key={`group-${JSON.stringify(groups)}`} groups={groups} />
+      default:
+        return null
+    }
+  }
+
   const tabItems = [
     {
       key: TAB_TYPE.STUDENT_LIST,
@@ -555,26 +566,6 @@ const StudentList: React.FC = () => {
       label: 'Reset Groups',
     },
   ]
-
-  if (!currentClass)
-    return null
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case TAB_TYPE.STUDENT_LIST:
-        return (
-          <StudentListTab
-            seats={seats}
-            onIncreaseScore={handleIncreaseScore}
-            onDecreaseScore={handleDecreaseScore}
-          />
-        )
-      case TAB_TYPE.GROUP:
-        return <GroupTab key={`group-${JSON.stringify(groups)}`} groups={groups} />
-      default:
-        return null
-    }
-  }
 
   return (
     <Modal

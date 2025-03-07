@@ -1,11 +1,12 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { Student } from '../../types'
 import { createSlice } from '@reduxjs/toolkit'
-import { mockStudents } from '../../mock/data'
 
 interface ScienceState {
   students: Record<string, Student[]>
   randomizedGroups: Record<string, string[][]>
+  loading: 'idle' | 'pending' | 'succeeded' | 'failed'
+  error: string | null
 }
 
 interface UpdateScorePayload {
@@ -23,14 +24,29 @@ interface ResetGroupPayload {
 }
 
 const initialState: ScienceState = {
-  students: mockStudents,
+  students: {},
   randomizedGroups: {},
+  loading: 'idle',
+  error: null,
 }
 
 export const scienceSlice = createSlice({
   name: 'science',
   initialState,
   reducers: {
+    fetchStudentsStart: (state) => {
+      state.loading = 'pending'
+      state.error = null
+    },
+    fetchStudentsSuccess: (state, action: PayloadAction<Record<string, Student[]>>) => {
+      state.loading = 'succeeded'
+      state.students = action.payload
+    },
+    fetchStudentsFailure: (state, action: PayloadAction<string>) => {
+      state.loading = 'failed'
+      state.error = action.payload
+    },
+
     updateStudentScore: (
       state,
       action: PayloadAction<UpdateScorePayload>,
@@ -74,6 +90,13 @@ export const scienceSlice = createSlice({
   },
 })
 
-export const { updateStudentScore, randomizeGroup, resetGroup } = scienceSlice.actions
+export const {
+  fetchStudentsStart,
+  fetchStudentsSuccess,
+  fetchStudentsFailure,
+  updateStudentScore,
+  randomizeGroup,
+  resetGroup,
+} = scienceSlice.actions
 
 export default scienceSlice.reducer
