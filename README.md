@@ -1,5 +1,3 @@
-# ViewSonic Interview F2E Quiz
-
 This project demonstrates a modern React application with advanced state management and UI features. Built with Vite, React, TypeScript, and Ant Design.
 
 ## 🌟 Features & Improvements
@@ -50,8 +48,8 @@ npm install -g pnpm
 ### Installation
 
 ```bash
-git clone git@github.com:Michael0520/QRCode-class.git
-cd QRCode-class
+git@github.com:Michael0520/antd-react-redux-test.git
+cd antd-react-redux-test
 pnpm i
 ```
 
