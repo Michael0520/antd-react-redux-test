@@ -3,9 +3,5 @@
   "eslint.useFlatConfig": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
-  },
-  "css.customData": [".vscode/tailwindcss.json"],
-  "files.associations": {
-    "*.css": "tailwindcss"
   }
 }
